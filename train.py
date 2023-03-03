@@ -8,7 +8,7 @@ import argparse
 import os
 from utils import str2bool, save_samples, get_loaders
 
-from tqdm import tqdm
+from tqdm import tqdm  #用于显示进度条
 import wandb
 
 from pixelcnn import PixelCNN
@@ -37,18 +37,21 @@ def train(cfg, model, device, train_loader, optimizer, scheduler, epoch):
         loss = F.cross_entropy(outputs, images)
         loss.backward()
 
+        # 梯度剪裁
         clip_grad_norm_(model.parameters(), max_norm=cfg.max_norm)
 
+        # 更新参数
         optimizer.step()
 
-    scheduler.step()
+    scheduler.step()  #调整学习率
+    # optimizer.step()通常用在每个mini-batch之中，而scheduler.step()通常用在epoch里面
 
 
 def test_and_sample(cfg, model, device, test_loader, height, width, losses, params, epoch):
     test_loss = 0
 
-    model.eval()
-    with torch.no_grad():
+    model.eval()  #通知dropout层和batchnorm层在train和val模式间切换
+    with torch.no_grad():  #停止autograd模块的工作，以加速和节省显存，但不会影响dropout和batchnorm层的行为
         for images, labels in test_loader:
             images = images.to(device, non_blocking=True)
             labels = labels.to(device, non_blocking=True)
@@ -57,6 +60,7 @@ def test_and_sample(cfg, model, device, test_loader, height, width, losses, para
             outputs = model(normalized_images, labels)
 
             test_loss += F.cross_entropy(outputs, images, reduction='none')
+            #reduction='none'表示直接返回n份样本的loss
 
     test_loss = test_loss.mean().cpu() / len(test_loader.dataset)
 
@@ -114,7 +118,7 @@ def main():
 
     wandb.init(project="PixelCNN")
     wandb.config.update(cfg)
-    torch.manual_seed(42)
+    torch.manual_seed(42)  ##生成随机数的种子，方便复现实验结果
 
     EPOCHS = cfg.epochs
 
@@ -126,6 +130,7 @@ def main():
     train_loader, test_loader, HEIGHT, WIDTH = get_loaders(cfg.dataset, cfg.batch_size, cfg.color_levels, TRAIN_DATASET_ROOT, TEST_DATASET_ROOT)
 
     optimizer = optim.Adam(model.parameters(), lr=cfg.learning_rate, weight_decay=cfg.weight_decay)
+    # 设置学习率调整方法
     scheduler = optim.lr_scheduler.CyclicLR(optimizer, cfg.learning_rate, 10*cfg.learning_rate, cycle_momentum=False)
 
     wandb.watch(model)

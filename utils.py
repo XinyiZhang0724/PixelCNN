@@ -5,6 +5,8 @@ import os
 from torchvision.utils import save_image
 from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
+# 在torchvision中，数据集有MNIST、Fashion-MNIST、KMNIST、EMNIST、FakeData、COCO、Captions、Detection、
+# LSUN、ImageFolder、DatasetFolder、Imagenet-12、CIFAR、STL10、SVHN、PhotoTour、SBU、Flickr、VOC、Cityscapes
 
 
 def quantisize(image, levels):
@@ -71,5 +73,7 @@ def get_loaders(dataset_name, batch_size, color_levels, train_root, test_root):
 
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, pin_memory=True, drop_last=True)
     test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, pin_memory=True, drop_last=True)
+    # pin_memory: 是否将数据拷贝到CUDA;
+    # drop_last: 最后一个batch是否被扔掉;
 
     return train_loader, test_loader, h, w

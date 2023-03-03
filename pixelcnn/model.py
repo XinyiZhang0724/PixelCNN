@@ -167,6 +167,7 @@ class PixelCNN(nn.Module):
         out = self.out_conv(out)
 
         out = out.view(count, self.color_levels, data_channels, height, width)
+        # view()函数用于改变tensor维度
 
         return out
 
@@ -185,6 +186,7 @@ class PixelCNN(nn.Module):
                     for c in range(channels):
                         unnormalized_probs = self.forward(samples, labels)
                         pixel_probs = torch.softmax(unnormalized_probs[:, :, c, i, j], dim=1)
+                        #torch.multinomial()：对pixel_probs进行n次采样
                         sampled_levels = torch.multinomial(pixel_probs, 1).squeeze().float() / (self.color_levels - 1)
                         samples[:, c, i, j] = sampled_levels
 
